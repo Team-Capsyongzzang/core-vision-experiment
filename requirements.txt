@@ -1,0 +1,28 @@
+# xBD Disaster Classifier — Python Dependencies
+#
+# PyTorch 설치는 공식 사이트에서 CUDA 버전에 맞게 별도 설치:
+#   https://pytorch.org/get-started/locally/
+#
+# RTX 3090 / CUDA 12.1 기준:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+#
+# CPU only:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# ── Deep Learning ─────────────────────────────────────────
+torch>=2.0.0
+torchvision>=0.15.0
+
+# ── Data & Image Processing ───────────────────────────────
+numpy>=1.24.0
+Pillow>=9.0.0
+
+# ── Visualization ─────────────────────────────────────────
+matplotlib>=3.7.0
+
+# ── Progress Bar ──────────────────────────────────────────
+tqdm>=4.65.0
+
+# ── Dataset Download (optional) ───────────────────────────
+# xBD 데이터셋을 kagglehub로 다운로드할 때만 필요
+kagglehub>=0.2.0

@@ -1,41 +1,84 @@
-# 👁️ CORE - SOTA Vision Pipeline & Agent
+# xBD 재난 분류기 (Disaster Classifier)
 
-> **CORE 시스템**의 AI 분석 엔진입니다. 악천후 위성 이미지 복원, RS-Mamba 기반 지형 변화 탐지, Amodal 분할 및 LangChain 기반 시각 정보 요약 리포팅을 수행합니다.
+위성 이미지(post-disaster)를 보고 재난 종류를 분류하는 파이프라인.
 
-## 🛠 Tech Stack
-* **Deep Learning:** PyTorch, Torchvision
-* **Vision Models:** DDGAN (Restoration), RS-Mamba (Backbone), Amodal Segmentation
-* **Agent:** LangChain, OpenAI API (or Local LLM)
-* **Data Handling:** GeoPandas, OpenCV
+## 태스크 정의
 
-## 📂 Directory Structure
-* `data/`: 데이터셋 폴더 (xBD 등) - **⚠️ `.gitignore`에 등록되어 GitHub에 업로드되지 않습니다.**
-* `models/`: DDGAN, RS-Mamba 등 딥러닝 모델 아키텍처 및 체크포인트 로드 코드
-* `utils/`: 데이터 로더(DataLoader), Tiling, 노이즈 증강(Augmentation) 스크립트
-* `agent/`: Segmentation 마스크를 자연어로 변환하는 LangChain 로직
-* `inference.py`: 단일/스트림 이미지 통합 추론 파이프라인
+```
+입력: post-disaster 위성 이미지 (3ch, 224×224)
+출력: 재난 종류 — earthquake / flood / hurricane / tornado / tsunami / wildfire
+```
 
-## 🚀 Getting Started
-1. **환경 설정:**
-   ```bash
-   git clone [https://github.com/](https://github.com/)[Organization-Name]/core-vision.git
-   cd core-vision
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
+## 레이블 생성 방식 (방식 A → B)
 
-2.  **데이터셋 준비:**
-    xBD 데이터셋을 다운로드하여 `data/` 디렉토리에 위치시킵니다. (상세 구조는 `utils/dataloader.py` 주석 참고)
-3.  **추론(Inference) 테스트:**
-    ```bash
-    python inference.py --input_dir data/sample_images --output_dir results/
-    ```
+xBD 파일명에서 재난 종류를 자동 추출 (방식 A) 하여  
+ResNet50 분류 모델을 학습 (방식 B) 합니다.
 
-## ⚠️ Data & Weights License Notice
+```
+파일명: socal-fire_00000371 → wildfire
+파일명: midwest-flooding_00000181 → flood
+```
 
-본 코드 베이스는 MIT License를 따르나, 본 프로젝트에서 사용되는 **xBD 데이터셋** 및 특정 사전 학습된 모델 가중치(Pre-trained Weights)는 원저작자의 비상업적/연구용 라이선스를 따릅니다. 데이터셋은 절대 본 레포지토리에 커밋하지 마십시오.
+## 프로젝트 구조
 
-## 📄 License
+```
+xbd_disaster_classifier/
+├── config/config.py          ← 모든 설정 (클래스, 하이퍼파라미터)
+├── data/
+│   ├── indexer.py            ← 파일명 → 레이블 자동 생성
+│   └── dataset.py            ← Dataset / DataLoader
+├── models/classifier.py      ← ResNet50 분류기
+├── losses/losses.py          ← Focal Loss + 클래스 가중치
+├── metrics/metrics.py        ← Accuracy, F1, Confusion Matrix
+├── training/trainer.py       ← Phase1(frozen) + Phase2(fine-tuning)
+├── evaluation/evaluator.py   ← 평가
+├── visualization/visualizer.py ← 혼동 행렬, 예측 그리드
+├── utils/seed.py
+└── main.py                   ← CLI 진입점
+```
 
-This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
+## 실행
+
+```bash
+# 전체 파이프라인
+python main.py
+
+# 단계 선택
+python main.py --steps index train
+python main.py --steps finetune eval_test predict
+```
+
+## 학습 전략
+
+```
+Phase 1 (20 epochs): backbone frozen → head만 학습
+  → lr=1e-4, Cosine scheduler
+
+Phase 2 (10 epochs): backbone unfrozen → 전체 fine-tuning
+  → backbone lr=2e-6, head lr=2e-5
+  → catastrophic forgetting 방지
+```
+
+## 예상 성능
+
+| 클래스 | 난이도 | 이유 |
+|---|---|---|
+| wildfire | 쉬움 | 탄 지형 패턴 뚜렷 |
+| flood | 보통 | 갈색 물 영역 |
+| hurricane | 보통 | 해안 범람 + 건물 파손 |
+| tornado | 어려움 | 국소적 파손, 산불과 혼동 |
+| earthquake | 어려움 | 건물 붕괴 패턴이 허리케인과 유사 |
+| tsunami | 어려움 | 샘플 수 적음, 홍수와 유사 |
+
+## 세그멘테이션 파이프라인과의 연결
+
+```
+위성 이미지
+    │
+    ├─→ [이 모델] 재난 분류 → "홍수"
+    │
+    └─→ [세그멘테이션 모델] 건물 피해 등급 맵
+    
+→ "이 지역은 홍수로 인해 건물 37%가 Major 이상 피해"
+→ LLM 리포트 생성 (제안서 파트3)
+```
