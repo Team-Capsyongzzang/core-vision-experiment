@@ -1,0 +1,122 @@
+{
+  "resnet50": {
+    "backbone": "resnet50",
+    "params_m": 25.0,
+    "imagenet_acc": 76.1,
+    "accuracy": 0.6551,
+    "f1_macro": 0.6358,
+    "f1_per_cls": {
+      "no_disaster": 0.5728,
+      "earthquake": 0.9231,
+      "flood": 0.6133,
+      "hurricane": 0.7647,
+      "tornado": 0.0,
+      "tsunami": 0.9189,
+      "wildfire": 0.6577
+    },
+    "det_inf_ms": 6.89,
+    "cls_inf_ms": 6.87,
+    "total_inf_ms": 13.76,
+    "efficiency": 0.6358
+  },
+  "resnet101": {
+    "backbone": "resnet101",
+    "params_m": 44.0,
+    "imagenet_acc": 77.4,
+    "accuracy": 0.7222,
+    "f1_macro": 0.6691,
+    "f1_per_cls": {
+      "no_disaster": 0.5951,
+      "earthquake": 0.9744,
+      "flood": 0.6857,
+      "hurricane": 0.8482,
+      "tornado": 0.0,
+      "tsunami": 0.8649,
+      "wildfire": 0.7155
+    },
+    "det_inf_ms": 14.52,
+    "cls_inf_ms": 14.33,
+    "total_inf_ms": 28.85,
+    "efficiency": 0.3802
+  },
+  "efficientnet_b0": {
+    "backbone": "efficientnet_b0",
+    "params_m": 5.3,
+    "imagenet_acc": 77.7,
+    "accuracy": 0.588,
+    "f1_macro": 0.5689,
+    "f1_per_cls": {
+      "no_disaster": 0.5214,
+      "earthquake": 0.8947,
+      "flood": 0.625,
+      "hurricane": 0.6787,
+      "tornado": 0.0,
+      "tsunami": 0.6818,
+      "wildfire": 0.581
+    },
+    "det_inf_ms": 9.67,
+    "cls_inf_ms": 9.51,
+    "total_inf_ms": 19.18,
+    "efficiency": 2.6837
+  },
+  "efficientnet_b3": {
+    "backbone": "efficientnet_b3",
+    "params_m": 12.0,
+    "imagenet_acc": 82.0,
+    "accuracy": 0.6065,
+    "f1_macro": 0.6012,
+    "f1_per_cls": {
+      "no_disaster": 0.5728,
+      "earthquake": 0.95,
+      "flood": 0.5823,
+      "hurricane": 0.6484,
+      "tornado": 0.0,
+      "tsunami": 0.8095,
+      "wildfire": 0.6455
+    },
+    "det_inf_ms": 14.52,
+    "cls_inf_ms": 14.56,
+    "total_inf_ms": 29.07,
+    "efficiency": 1.2525
+  },
+  "mobilenet_v3_large": {
+    "backbone": "mobilenet_v3_large",
+    "params_m": 5.4,
+    "imagenet_acc": 75.2,
+    "accuracy": 0.5463,
+    "f1_macro": 0.5517,
+    "f1_per_cls": {
+      "no_disaster": 0.4959,
+      "earthquake": 0.9744,
+      "flood": 0.5,
+      "hurricane": 0.6038,
+      "tornado": 0.0,
+      "tsunami": 0.7347,
+      "wildfire": 0.5534
+    },
+    "det_inf_ms": 6.99,
+    "cls_inf_ms": 7.02,
+    "total_inf_ms": 14.01,
+    "efficiency": 2.5543
+  },
+  "mobilenet_v3_small": {
+    "backbone": "mobilenet_v3_small",
+    "params_m": 2.5,
+    "imagenet_acc": 67.7,
+    "accuracy": 0.3565,
+    "f1_macro": 0.3766,
+    "f1_per_cls": {
+      "no_disaster": 0.4939,
+      "earthquake": 0.75,
+      "flood": 0.3467,
+      "hurricane": 0.3218,
+      "tornado": 0.0,
+      "tsunami": 0.5079,
+      "wildfire": 0.2156
+    },
+    "det_inf_ms": 5.84,
+    "cls_inf_ms": 5.84,
+    "total_inf_ms": 11.68,
+    "efficiency": 3.7656
+  }
+}

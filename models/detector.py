@@ -1,23 +1,21 @@
 """
 models/detector.py
 ==================
-재난 탐지기 — |post - pre| diff 이미지로 재난 있음/없음 이진 분류.
+재난 탐지기 — backbone.py의 팩토리를 사용하여 6개 백본 지원.
 
-방법 A (DisasterClassifier)와 구조는 거의 동일하지만:
-  - 출력이 7개 클래스 → 2개 (있음/없음)
-  - 입력이 post 이미지 → diff 이미지 (3ch 동일)
-  - sigmoid 기반 임계값으로 최종 판정
+config.py의 cfg.detector.backbone 값으로 백본을 선택합니다.
 
-탐지기가 "있음"으로 판정한 경우에만 분류기로 전달합니다.
+    cfg.detector.backbone = "resnet50"           # 기본값
+    cfg.detector.backbone = "mobilenet_v3_small" # 최경량 (1단계 스크리닝 후보)
 """
 
 from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torchvision.models as tvm
 
 from config.config import cfg
+from models.backbone import build_backbone, print_backbone_info
 
 
 class DisasterDetector(nn.Module):
@@ -25,29 +23,33 @@ class DisasterDetector(nn.Module):
     재난 유무 이진 분류기.
 
     Forward 출력: logit (B, 1) — sigmoid 적용 전 raw score
-    예측:         sigmoid(logit) > threshold → 재난 있음
+    예측:         sigmoid(logit) >= threshold → 재난 있음
     """
 
     def __init__(
         self,
-        pretrained: bool        = True,
-        dropout:    float | None = None,
+        backbone_name: str   | None = None,
+        pretrained:    bool         = True,
+        dropout:       float | None = None,
     ):
         super().__init__()
-        dropout = dropout or cfg.detector.dropout
+        backbone_name = backbone_name or cfg.detector.backbone
+        dropout       = dropout       or cfg.detector.dropout
 
-        weights  = tvm.ResNet50_Weights.IMAGENET1K_V1 if pretrained else None
-        resnet   = tvm.resnet50(weights=weights)
-        self.backbone = nn.Sequential(*list(resnet.children())[:-1])
-        # → (B, 2048, 1, 1)
+        # ── Backbone ─────────────────────────────────────
+        self.backbone, feat_dim = build_backbone(backbone_name, pretrained)
+        self.backbone_name      = backbone_name
 
+        # ── Detection Head (이진 분류) ────────────────────
+        # 분류기보다 간단한 head (탐지기는 단순 이진 판단)
+        mid_dim = max(feat_dim // 8, 64)
         self.head = nn.Sequential(
             nn.Flatten(),
             nn.Dropout(dropout),
-            nn.Linear(2048, 256),
+            nn.Linear(feat_dim, mid_dim),
             nn.ReLU(inplace=True),
             nn.Dropout(dropout),
-            nn.Linear(256, 1),     # 이진 분류 → 1개 출력
+            nn.Linear(mid_dim, 1),   # 이진 분류 → 1개 출력
         )
 
     def forward(self, diff: torch.Tensor) -> torch.Tensor:
@@ -60,7 +62,7 @@ class DisasterDetector(nn.Module):
         -------
         logit : (B, 1)
         """
-        feat  = self.backbone(diff)
+        feat = self.backbone(diff)
         return self.head(feat)
 
     def predict(
@@ -69,10 +71,6 @@ class DisasterDetector(nn.Module):
         threshold: float | None = None,
     ) -> torch.Tensor:
         """
-        Parameters
-        ----------
-        threshold : sigmoid 임계값. None이면 config 값 사용.
-
         Returns
         -------
         (B,) bool tensor — True: 재난 있음, False: 없음
@@ -114,7 +112,8 @@ def build_detector(
     n_total     = sum(p.numel() for p in detector.parameters())
     n_trainable = sum(p.numel() for p in detector.parameters() if p.requires_grad)
 
-    print(f"✓ Detector : DisasterDetector (ResNet50, pretrained={pretrained})")
+    print(f"✓ Detector : DisasterDetector")
+    print_backbone_info(detector.backbone_name)
     print(f"  Task            : binary (재난 있음/없음)")
     print(f"  Threshold       : {cfg.detector.threshold}")
     print(f"  Total params    : {n_total:,}")
